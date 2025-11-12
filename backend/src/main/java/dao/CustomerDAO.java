@@ -2,20 +2,18 @@ package dao;
 
 import model.Customer;
 import util.DBConnection;
-
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class CustomerDAO {
 
-    public void addCustomer(Customer customer) {
+    public void addCustomer(Customer c) {
         String sql = "INSERT INTO customers (name, email, phone) VALUES (?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, customer.getName());
-            ps.setString(2, customer.getEmail());
-            ps.setString(3, customer.getPhone());
+            ps.setString(1, c.getName());
+            ps.setString(2, c.getEmail());
+            ps.setString(3, c.getPhone());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -42,14 +40,14 @@ public class CustomerDAO {
         return list;
     }
 
-    public void updateCustomer(Customer customer) {
+    public void updateCustomer(Customer c) {
         String sql = "UPDATE customers SET name=?, email=?, phone=? WHERE id=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, customer.getName());
-            ps.setString(2, customer.getEmail());
-            ps.setString(3, customer.getPhone());
-            ps.setInt(4, customer.getId());
+            ps.setString(1, c.getName());
+            ps.setString(2, c.getEmail());
+            ps.setString(3, c.getPhone());
+            ps.setInt(4, c.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

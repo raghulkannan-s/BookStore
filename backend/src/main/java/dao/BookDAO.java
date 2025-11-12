@@ -25,6 +25,33 @@ public class BookDAO {
         return list;
     }
 
+    public void update(Book b) {
+        String sql = "UPDATE books SET title=?, author=?, price=?, stock=? WHERE id=?";
+        try (Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, b.getTitle());
+            ps.setString(2, b.getAuthor());
+            ps.setDouble(3, b.getPrice());
+            ps.setInt(4, b.getStock());
+            ps.setInt(5, b.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void delete(int id) {
+        String sql = "DELETE FROM books WHERE id=?";
+        try (Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     public void add(Book b) {
         String sql = "INSERT INTO books (title, author, price, stock) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();

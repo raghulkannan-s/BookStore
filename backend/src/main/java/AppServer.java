@@ -32,9 +32,12 @@ public class AppServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            String[] parts = path.split("/");
+            Integer id = parts.length > 3 ? tryParse(parts[3]) : null;
 
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
             exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
 
             if (method.equalsIgnoreCase("OPTIONS")) {
@@ -42,32 +45,58 @@ public class AppServer {
                 return;
             }
 
-            if (method.equalsIgnoreCase("GET")) {
-                List<Book> books = dao.getAll();
-                sendResponse(exchange, gson.toJson(books), 200);
-            } 
-            else if (method.equalsIgnoreCase("POST")) {
-                InputStreamReader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
-                Book book = gson.fromJson(reader, Book.class);
-                if(book.getTitle() == null || book.getAuthor() == null || book.getPrice() <= 0 || book.getStock() < 0) {
-                    sendResponse(exchange, "{\"error\":\"Missing or invalid fields in book data\"}", 400);
-                    return;
+            try {
+                switch (method) {
+                    case "GET":
+                        if (id == null) {
+                            List<Book> books = dao.getAll();
+                            sendResponse(exchange, gson.toJson(books), 200);
+                        }
+                        break;
+
+                    case "POST":
+                        Book book = gson.fromJson(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8), Book.class);
+                        dao.add(book);
+                        sendResponse(exchange, "{\"message\":\"Book added\"}", 201);
+                        break;
+
+                    case "PUT":
+                        if (id == null) {
+                            sendResponse(exchange, "{\"error\":\"Book ID missing in URL\"}", 400);
+                            return;
+                        }
+                        Book updatedBook = gson.fromJson(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8), Book.class);
+                        updatedBook.setId(id);
+                        dao.update(updatedBook);
+                        sendResponse(exchange, "{\"message\":\"Book updated\"}", 200);
+                        break;
+
+                    case "DELETE":
+                        if (id == null) {
+                            sendResponse(exchange, "{\"error\":\"Book ID missing in URL\"}", 400);
+                            return;
+                        }
+                        dao.delete(id);
+                        sendResponse(exchange, "{\"message\":\"Book deleted\"}", 200);
+                        break;
+
+                    default:
+                        sendResponse(exchange, "{\"error\":\"Unsupported method\"}", 405);
                 }
-                dao.add(book);
-                sendResponse(exchange, "{\"message\":\"Book added\"}", 201);
-            } 
-            else {
-                sendResponse(exchange, "{\"error\":\"Unsupported method\"}", 405);
+            } catch (Exception e) {
+                sendResponse(exchange, "{\"error\":\"" + e.getMessage() + "\"}", 500);
             }
+        }
+
+        private Integer tryParse(String s) {
+            try { return Integer.parseInt(s); } catch (Exception e) { return null; }
         }
 
         private void sendResponse(HttpExchange exchange, String response, int code) throws IOException {
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(code, bytes.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
-            }
+            try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
         }
     }
 
@@ -79,9 +108,12 @@ public class AppServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            String[] parts = path.split("/");
+            Integer id = parts.length > 3 ? tryParse(parts[3]) : null;
 
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
             exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
 
             if (method.equalsIgnoreCase("OPTIONS")) {
@@ -89,32 +121,58 @@ public class AppServer {
                 return;
             }
 
-            if (method.equalsIgnoreCase("GET")) {
-                List<Customer> customers = dao.getAllCustomers();
-                sendResponse(exchange, gson.toJson(customers), 200);
-            } 
-            else if (method.equalsIgnoreCase("POST")) {
-                InputStreamReader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
-                Customer customer = gson.fromJson(reader, Customer.class);
-                if(customer.getName() == null || customer.getEmail() == null || customer.getPhone() == null) {
-                    sendResponse(exchange, "{\"error\":\"Missing fields in customer data\"}", 400);
-                    return;
+            try {
+                switch (method) {
+                    case "GET":
+                        if (id == null) {
+                            List<Customer> customers = dao.getAllCustomers();
+                            sendResponse(exchange, gson.toJson(customers), 200);
+                        }
+                        break;
+
+                    case "POST":
+                        Customer c = gson.fromJson(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8), Customer.class);
+                        dao.addCustomer(c);
+                        sendResponse(exchange, "{\"message\":\"Customer added\"}", 201);
+                        break;
+
+                    case "PUT":
+                        if (id == null) {
+                            sendResponse(exchange, "{\"error\":\"Customer ID missing in URL\"}", 400);
+                            return;
+                        }
+                        Customer updated = gson.fromJson(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8), Customer.class);
+                        updated.setId(id);
+                        dao.updateCustomer(updated);
+                        sendResponse(exchange, "{\"message\":\"Customer updated\"}", 200);
+                        break;
+
+                    case "DELETE":
+                        if (id == null) {
+                            sendResponse(exchange, "{\"error\":\"Customer ID missing in URL\"}", 400);
+                            return;
+                        }
+                        dao.deleteCustomer(id);
+                        sendResponse(exchange, "{\"message\":\"Customer deleted\"}", 200);
+                        break;
+
+                    default:
+                        sendResponse(exchange, "{\"error\":\"Unsupported method\"}", 405);
                 }
-                dao.addCustomer(customer);
-                sendResponse(exchange, "{\"message\":\"Customer added\"}", 201);
-            } 
-            else {
-                sendResponse(exchange, "{\"error\":\"Unsupported method\"}", 405);
+            } catch (Exception e) {
+                sendResponse(exchange, "{\"error\":\"" + e.getMessage() + "\"}", 500);
             }
+        }
+
+        private Integer tryParse(String s) {
+            try { return Integer.parseInt(s); } catch (Exception e) { return null; }
         }
 
         private void sendResponse(HttpExchange exchange, String response, int code) throws IOException {
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(code, bytes.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
-            }
+            try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
         }
     }
 }
