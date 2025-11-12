@@ -1,0 +1,6 @@
+@echo off
+echo Building project...
+javac -cp "lib/*" src/main/java/util/DBConnection.java src/main/java/model/*.java src/main/java/dao/*.java src/main/java/AppServer.java -d out
+echo Starting server...
+java -cp "lib/*;out" AppServer
+pause
