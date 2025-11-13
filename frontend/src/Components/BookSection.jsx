@@ -129,7 +129,7 @@ export default function BookSection() {
                 >
                   <td className="px-4 py-3">{b.title}</td>
                   <td className="px-4 py-3">{b.author}</td>
-                  <td className="px-4 py-3 text-right">${b.price}</td>
+                  <td className="px-4 py-3 text-right">Rs. {b.price}</td>
                   <td className="px-4 py-3 text-right">{b.stock}</td>
                   <td className="px-4 py-3 text-center space-x-2">
                     <button
