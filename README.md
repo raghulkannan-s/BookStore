@@ -1,4 +1,3 @@
-```markdown
 # 📚 Bookstore Management Dashboard
 
 A **modern full-stack bookstore system** built using  
