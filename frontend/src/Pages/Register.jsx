@@ -23,12 +23,13 @@ export default function Register() {
       toast.error("Please fill all fields");
       return;
     }
-
+    toast.loading("Registering...");
     const res = await fetch(`${API}/api/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)
     });
+    toast.dismiss();
 
     const data = await res.json();
 
@@ -85,7 +86,7 @@ export default function Register() {
           </button>
         </div>
 
-        <button className="bg-gradient-to-r from-blue-500 to-cyan-500 py-3 rounded-lg shadow hover:opacity-90 transition">
+        <button className="cursor-pointer bg-gradient-to-r from-blue-500 to-cyan-500 py-3 rounded-lg shadow hover:opacity-90 transition">
           Register
         </button>
 
@@ -94,7 +95,7 @@ export default function Register() {
           <button
             type="button"
             onClick={() => navigate("/login")}
-            className="text-cyan-400 underline"
+            className="cursor-pointer text-cyan-400 underline"
           >
             Login
           </button>

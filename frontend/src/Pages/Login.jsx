@@ -22,13 +22,13 @@ export default function Login() {
       toast.error("Enter email and password");
       return;
     }
-
+    toast.loading("Logging in...");
     const res = await fetch(`${API}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)
     });
-
+    toast.dismiss();
     const data = await res.json();
 
     if (res.ok) {
@@ -71,7 +71,7 @@ export default function Login() {
           />
           <button
             type="button"
-            className="absolute right-3 top-3 text-slate-400 hover:text-white"
+            className="absolute right-3 top-3 cursor-pointer text-slate-400 hover:text-white"
             onClick={() => setShowPass(!showPass)}
           >
             {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -87,7 +87,7 @@ export default function Login() {
           <button
             type="button"
             onClick={() => navigate("/register")}
-            className="text-cyan-400 underline"
+            className="cursor-pointer text-cyan-400 underline"
           >
             Register
           </button>
