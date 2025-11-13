@@ -15,29 +15,48 @@ export default function Register() {
   });
 
   const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
 
     if (!form.name || !form.email || !form.password) {
       toast.error("Please fill all fields");
       return;
     }
-    toast.loading("Registering...");
-    const res = await fetch(`${API}/api/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    });
-    toast.dismiss();
 
-    const data = await res.json();
+    try {
+      setLoading(true);
+      const loadingId = toast.loading("Creating account...");
 
-    if (res.ok) {
-      toast.success("Registered successfully");
+      const res = await fetch(`${API}/api/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+
+      toast.dismiss(loadingId);
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: "Invalid server response" };
+      }
+
+      if (!res.ok) {
+        toast.error(data.error || "Registration failed");
+        return;
+      }
+
+      toast.success("Account created successfully");
       navigate("/login");
-    } else {
-      toast.error(data.error || "Registration failed");
+
+    } catch (err) {
+      toast.error("Network error — check your connection");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,21 +92,27 @@ export default function Register() {
           <input
             type={showPass ? "text" : "password"}
             placeholder="Password"
-            className="p-3 w-full rounded-lg bg-slate-700 border border-slate-600 outline-none focus:border-cyan-400 pr-10"
+            className="p-3 w-full rounded-lg bg-slate-700 border border-slate-600 outline-none focus:border-cyan-400 pr-12"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
+
           <button
             type="button"
-            className="absolute right-3 top-3 text-slate-400 hover:text-white"
             onClick={() => setShowPass(!showPass)}
+            className="absolute right-3 top-3 cursor-pointer text-slate-400 hover:text-white"
           >
             {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
 
-        <button className="cursor-pointer bg-gradient-to-r from-blue-500 to-cyan-500 py-3 rounded-lg shadow hover:opacity-90 transition">
-          Register
+        <button
+          disabled={loading}
+          className={`py-3 rounded-lg shadow bg-gradient-to-r from-blue-500 to-cyan-500 transition ${
+            loading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"
+          }`}
+        >
+          {loading ? "Processing..." : "Register"}
         </button>
 
         <p className="text-center text-sm text-slate-300">
@@ -95,7 +120,7 @@ export default function Register() {
           <button
             type="button"
             onClick={() => navigate("/login")}
-            className="cursor-pointer text-cyan-400 underline"
+            className="text-cyan-400 underline cursor-pointer"
           >
             Login
           </button>

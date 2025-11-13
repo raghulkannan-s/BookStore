@@ -14,29 +14,49 @@ export default function Login() {
   });
 
   const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
 
     if (!form.email || !form.password) {
       toast.error("Enter email and password");
       return;
     }
-    toast.loading("Logging in...");
-    const res = await fetch(`${API}/api/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    });
-    toast.dismiss();
-    const data = await res.json();
 
-    if (res.ok) {
+    try {
+      setLoading(true);
+      const loadingId = toast.loading("Logging in...");
+
+      const res = await fetch(`${API}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+
+      toast.dismiss(loadingId);
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: "Invalid server response" };
+      }
+
+      if (!res.ok) {
+        toast.error(data.error || "Login failed");
+        return;
+      }
+
       toast.success("Login successful");
       localStorage.setItem("user", JSON.stringify(data));
       navigate("/");
-    } else {
-      toast.error(data.error || "Invalid login");
+
+    } catch (err) {
+      toast.error("Network error — check your connection");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,15 +80,15 @@ export default function Login() {
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
 
-        {/* Password */}
         <div className="relative">
           <input
             type={showPass ? "text" : "password"}
             placeholder="Password"
-            className="p-3 w-full rounded-lg bg-slate-700 border border-slate-600 outline-none focus:border-cyan-400 pr-10"
+            className="p-3 w-full rounded-lg bg-slate-700 border border-slate-600 outline-none focus:border-cyan-400 pr-12"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
+
           <button
             type="button"
             className="absolute right-3 top-3 cursor-pointer text-slate-400 hover:text-white"
@@ -78,12 +98,17 @@ export default function Login() {
           </button>
         </div>
 
-        <button className="bg-gradient-to-r from-blue-500 to-cyan-500 py-3 rounded-lg shadow hover:opacity-90 transition">
-          Login
+        <button
+          disabled={loading}
+          className={`py-3 rounded-lg shadow bg-gradient-to-r from-blue-500 to-cyan-500 transition ${
+            loading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"
+          }`}
+        >
+          {loading ? "Processing..." : "Login"}
         </button>
 
         <p className="text-center text-sm text-slate-300">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <button
             type="button"
             onClick={() => navigate("/register")}
