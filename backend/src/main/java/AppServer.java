@@ -1,10 +1,15 @@
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+
 import dao.BookDAO;
 import dao.CustomerDAO;
+import dao.UserDAO;
+
 import model.Book;
 import model.Customer;
+import model.User;
+
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +23,9 @@ public class AppServer {
 
         server.createContext("/api/books", new BookHandler());
         server.createContext("/api/customers", new CustomerHandler());
+        server.createContext("/api/register", new RegisterHandler());
+        server.createContext("/api/login", new LoginHandler());
+
 
         server.setExecutor(null);
         System.out.println("✅ Server running at http://localhost:9090");
@@ -175,4 +183,89 @@ public class AppServer {
             try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
         }
     }
+
+    // ---------------- AUTH HANDLERS ----------------
+    static class RegisterHandler implements HttpHandler {
+        private final UserDAO dao = new UserDAO();
+        private final Gson gson = new Gson();
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String method = exchange.getRequestMethod();
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+
+            if (method.equalsIgnoreCase("OPTIONS")) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            if (method.equalsIgnoreCase("POST")) {
+                InputStreamReader reader = new InputStreamReader(exchange.getRequestBody());
+                User user = gson.fromJson(reader, User.class);
+                if (user.getEmail() == null || user.getPassword() == null || user.getName() == null) {
+                    sendResponse(exchange, "{\"error\":\"Missing required fields\"}", 400);
+                    return;
+                }
+                boolean success = dao.register(user);
+                if (success)
+                    sendResponse(exchange, "{\"message\":\"User registered successfully\"}", 201);
+                else
+                    sendResponse(exchange, "{\"error\":\"User registration failed\"}", 400);
+            } else {
+                sendResponse(exchange, "{\"error\":\"Unsupported method\"}", 405);
+            }
+        }
+
+        private void sendResponse(HttpExchange exchange, String response, int code) throws IOException {
+            byte[] bytes = response.getBytes();
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(code, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        }
+    }
+
+    static class LoginHandler implements HttpHandler {
+        private final UserDAO dao = new UserDAO();
+        private final Gson gson = new Gson();
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String method = exchange.getRequestMethod();
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+
+            if (method.equalsIgnoreCase("OPTIONS")) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            if (method.equalsIgnoreCase("POST")) {
+                InputStreamReader reader = new InputStreamReader(exchange.getRequestBody());
+                User creds = gson.fromJson(reader, User.class);
+
+                User user = dao.login(creds.getEmail(), creds.getPassword());
+                if (user != null)
+                    sendResponse(exchange, gson.toJson(user), 200);
+                else
+                    sendResponse(exchange, "{\"error\":\"Invalid email or password\"}", 401);
+            } else {
+                sendResponse(exchange, "{\"error\":\"Unsupported method\"}", 405);
+            }
+        }
+
+        private void sendResponse(HttpExchange exchange, String response, int code) throws IOException {
+            byte[] bytes = response.getBytes();
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(code, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        }
+    }
+
 }
+
+

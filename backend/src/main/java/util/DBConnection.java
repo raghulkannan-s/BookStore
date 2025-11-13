@@ -26,7 +26,9 @@ public class DBConnection {
     public static Connection getConnection() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            return DriverManager.getConnection(URL, USER, PASSWORD);
+            Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            System.out.println("✅ Database connected");
+            return connection;
         } catch (Exception e) {
             throw new RuntimeException("Database connection error: " + e.getMessage());
         }
